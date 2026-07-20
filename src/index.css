@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apple-style base styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, 'Segoe UI', system-ui, sans-serif;
+  @apply bg-gray-50 text-gray-900;
+}
+
+/* Custom scrollbar - Apple style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* Selection style */
+::selection {
+  @apply bg-gray-900 text-white;
+}
+
+/* Focus visible style */
+*:focus-visible {
+  @apply outline-none ring-2 ring-gray-900 ring-offset-2;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply bg-white/80 backdrop-blur-xl border border-white/20;
+}
+
+.glass-dark {
+  @apply bg-gray-900/80 backdrop-blur-xl border border-gray-700/30;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  @apply transition-all duration-300 ease-out;
+}
+
+/* Apple-style button */
+.btn-apple {
+  @apply px-6 py-3 rounded-full font-medium text-sm transition-smooth;
+  @apply bg-gray-900 text-white hover:bg-gray-800;
+  @apply active:scale-95;
+}
+
+.btn-apple-secondary {
+  @apply px-6 py-3 rounded-full font-medium text-sm transition-smooth;
+  @apply bg-white text-gray-900 border border-gray-200;
+  @apply hover:bg-gray-50 hover:border-gray-300;
+  @apply active:scale-95;
+}
+
+/* Card styles */
+.card-apple {
+  @apply bg-white rounded-3xl shadow-sm border border-gray-100;
+  @apply transition-smooth hover:shadow-md;
+}
+
+/* Input styles */
+.input-apple {
+  @apply w-full px-5 py-4 rounded-2xl;
+  @apply bg-gray-100 border-0;
+  @apply text-gray-900 placeholder-gray-400;
+  @apply focus:ring-2 focus:ring-gray-900 focus:bg-white;
+  @apply transition-smooth;
+}
