@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Plus, Settings, Search } from 'lucide-react';
+import { Plus, Settings } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useStore } from './store';
 import { SearchBox } from './components/SearchBox';
 import { CategorySection } from './components/CategorySection';

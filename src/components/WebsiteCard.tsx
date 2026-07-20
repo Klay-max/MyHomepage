@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Edit2, Trash2, Globe } from 'lucide-react';
+import { Trash2, Globe } from 'lucide-react';
 import type { Website } from '../types';
 import { getFaviconUrl, formatUrl, getIconSizeClass } from '../utils';
 import { useStore } from '../store';
@@ -13,7 +13,6 @@ interface WebsiteCardProps {
 export function WebsiteCard({ website }: WebsiteCardProps) {
   const { settings, deleteWebsite } = useStore();
   const [iconError, setIconError] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
   const {
     attributes,

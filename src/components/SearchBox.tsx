@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Search, Globe, ArrowRight } from 'lucide-react';
 import { useStore } from '../store';
 import { normalizeUrl, isValidUrl } from '../utils';
 
 export function SearchBox() {
-  const { searchQuery, setSearchQuery, searchResults, websites } = useStore();
+  const { searchQuery, setSearchQuery, searchResults } = useStore();
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
