@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Settings } from 'lucide-react';
-import { DndContext, pointerWithin, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useStore } from './store';
 import { SearchBox } from './components/SearchBox';
@@ -10,7 +10,7 @@ import { AddWebsiteModal } from './components/AddWebsiteModal';
 import { SettingsPanel } from './components/SettingsPanel';
 
 function App() {
-  const { categories, websites, settings, reorderCategories, moveWebsite, addCategory } = useStore();
+  const { categories, settings, reorderCategories, addCategory } = useStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -20,7 +20,7 @@ function App() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 5 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -31,20 +31,10 @@ function App() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    // Check if dragging a category or a website
-    const isCategory = categories.some(c => c.id === active.id);
-    const isWebsite = websites.some(w => w.id === active.id);
-
-    if (isCategory) {
-      // Reorder categories
-      const oldIndex = sortedCategories.findIndex(c => c.id === active.id);
-      const newIndex = sortedCategories.findIndex(c => c.id === over.id);
-      if (oldIndex !== -1 && newIndex !== -1) {
-        reorderCategories(oldIndex, newIndex);
-      }
-    } else if (isWebsite) {
-      // Move/reorder website (supports cross-category drag)
-      moveWebsite(String(active.id), String(over.id));
+    const oldIndex = sortedCategories.findIndex((c) => c.id === active.id);
+    const newIndex = sortedCategories.findIndex((c) => c.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      reorderCategories(oldIndex, newIndex);
     }
   };
 
@@ -110,7 +100,7 @@ function App() {
           <div className="flex-1">
             <DndContext
               sensors={sensors}
-              collisionDetection={pointerWithin}
+              collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
               <SortableContext

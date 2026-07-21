@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Trash2, Globe } from 'lucide-react';
+import { Trash2, Globe, GripVertical } from 'lucide-react';
 import type { Website } from '../types';
 import { getFaviconUrl, formatUrl, getIconSizeClass } from '../utils';
 import { useStore } from '../store';
@@ -40,12 +40,23 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
       className="group relative"
     >
+      {/* Drag handle - only this area triggers drag */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+        title="拖拽排序"
+      >
+        <div className="w-8 h-4 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center shadow-sm">
+          <GripVertical className="w-3 h-3 text-gray-500" />
+        </div>
+      </div>
+
+      {/* Main card - click to open */}
       <button
         onClick={handleClick}
-        {...listeners}
         className="w-full flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100 hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer"
       >
         {/* Icon */}

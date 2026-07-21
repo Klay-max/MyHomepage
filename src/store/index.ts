@@ -74,30 +74,53 @@ export const useStore = create<AppState>()(
         const { websites } = get();
         const active = websites.find(w => w.id === activeId);
         const over = websites.find(w => w.id === overId);
-        if (!active || !over) return;
+        if (!active || !over || active.id === over.id) return;
 
-        const newCategoryId = active.categoryId === over.categoryId
-          ? active.categoryId
-          : over.categoryId;
+        const isSameCategory = active.categoryId === over.categoryId;
+        const newCategoryId = over.categoryId;
 
-        // Build new websites array grouped by category
-        const categoryIds = [...new Set(websites.map(w => w.categoryId))];
+        // Build new websites array
         const result: Website[] = [];
+        const categoryIds = [...new Set(websites.map(w => w.categoryId))];
 
         for (const catId of categoryIds) {
-          // Get all websites in this category, excluding the one being moved
-          const catWebsites = websites
-            .filter(w => w.categoryId === catId && w.id !== activeId);
-
           if (catId === newCategoryId) {
-            // Insert the moved website at the target position
-            const insertIndex = catWebsites.findIndex(w => w.id === overId);
-            catWebsites.splice(insertIndex, 0, { ...active, categoryId: newCategoryId });
+            // Target category - need to insert the moved item
+            if (isSameCategory) {
+              // Same category: reorder within this category
+              const catWebsites = websites
+                .filter(w => w.categoryId === catId)
+                .sort((a, b) => a.order - b.order);
+              const oldIndex = catWebsites.findIndex(w => w.id === activeId);
+              const newIndex = catWebsites.findIndex(w => w.id === overId);
+              const [moved] = catWebsites.splice(oldIndex, 1);
+              catWebsites.splice(newIndex, 0, moved);
+              catWebsites.forEach((w, i) => { w.order = i; });
+              result.push(...catWebsites);
+            } else {
+              // Different category: move to target category
+              const catWebsites = websites
+                .filter(w => w.categoryId === catId && w.id !== activeId)
+                .sort((a, b) => a.order - b.order);
+              const insertIndex = catWebsites.findIndex(w => w.id === overId);
+              catWebsites.splice(insertIndex, 0, { ...active, categoryId: newCategoryId });
+              catWebsites.forEach((w, i) => { w.order = i; });
+              result.push(...catWebsites);
+            }
+          } else if (catId === active.categoryId && !isSameCategory) {
+            // Source category (when moving to different category) - remove the item
+            const catWebsites = websites
+              .filter(w => w.categoryId === catId && w.id !== activeId)
+              .sort((a, b) => a.order - b.order);
+            catWebsites.forEach((w, i) => { w.order = i; });
+            result.push(...catWebsites);
+          } else {
+            // Other categories - keep as is
+            const catWebsites = websites
+              .filter(w => w.categoryId === catId)
+              .sort((a, b) => a.order - b.order);
+            result.push(...catWebsites);
           }
-
-          // Re-index
-          catWebsites.forEach((w, i) => { w.order = i; });
-          result.push(...catWebsites);
         }
 
         set({ websites: result });
