@@ -83,7 +83,11 @@ export function CategorySection({ category }: CategorySectionProps) {
     if (over && active.id !== over.id) {
       const oldIndex = categoryWebsites.findIndex((w) => w.id === active.id);
       const newIndex = categoryWebsites.findIndex((w) => w.id === over.id);
-      reorderWebsites(category.id, oldIndex, newIndex);
+      
+      // Only reorder if both indices are valid
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderWebsites(category.id, oldIndex, newIndex);
+      }
     }
   };
 

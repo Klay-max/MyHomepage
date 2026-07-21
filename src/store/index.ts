@@ -62,11 +62,18 @@ export const useStore = create<AppState>()(
       },
 
       reorderWebsites: (categoryId, oldIndex, newIndex) => {
-        const websites = get().websites.filter(w => w.categoryId === categoryId);
-        const otherWebsites = get().websites.filter(w => w.categoryId !== categoryId);
-        const [moved] = websites.splice(oldIndex, 1);
-        websites.splice(newIndex, 0, moved);
-        const reordered = websites.map((w, i) => ({ ...w, order: i }));
+        const allWebsites = get().websites;
+        const categoryWebsites = allWebsites.filter(w => w.categoryId === categoryId);
+        const otherWebsites = allWebsites.filter(w => w.categoryId !== categoryId);
+        
+        // Create new array to avoid mutating original
+        const newCategoryWebsites = [...categoryWebsites];
+        const [moved] = newCategoryWebsites.splice(oldIndex, 1);
+        newCategoryWebsites.splice(newIndex, 0, moved);
+        
+        // Update order property
+        const reordered = newCategoryWebsites.map((w, i) => ({ ...w, order: i }));
+        
         set({ websites: [...otherWebsites, ...reordered] });
       },
 
