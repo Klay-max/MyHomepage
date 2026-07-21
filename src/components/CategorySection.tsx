@@ -1,18 +1,5 @@
 import { useState } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable';
+import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import { useStore } from '../store';
 import { WebsiteCard } from './WebsiteCard';
@@ -25,7 +12,7 @@ interface CategorySectionProps {
 }
 
 export function CategorySection({ category }: CategorySectionProps) {
-  const { websites, settings, reorderWebsites, deleteCategory, updateCategory } = useStore();
+  const { websites, settings, deleteCategory, updateCategory } = useStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
@@ -33,23 +20,6 @@ export function CategorySection({ category }: CategorySectionProps) {
   const categoryWebsites = websites
     .filter((w) => w.categoryId === category.id)
     .sort((a, b) => a.order - b.order);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = categoryWebsites.findIndex((w) => w.id === active.id);
-      const newIndex = categoryWebsites.findIndex((w) => w.id === over.id);
-      reorderWebsites(category.id, oldIndex, newIndex);
-    }
-  };
 
   const handleSaveEdit = () => {
     if (editName.trim()) {
@@ -108,22 +78,16 @@ export function CategorySection({ category }: CategorySectionProps) {
       </div>
 
       {/* Websites Grid */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+      <SortableContext
+        items={categoryWebsites.map((w) => w.id)}
+        strategy={rectSortingStrategy}
       >
-        <SortableContext
-          items={categoryWebsites.map((w) => w.id)}
-          strategy={rectSortingStrategy}
-        >
-          <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${getDensityGapClass(settings.density)}`}>
-            {categoryWebsites.map((website) => (
-              <WebsiteCard key={website.id} website={website} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${getDensityGapClass(settings.density)}`}>
+          {categoryWebsites.map((website) => (
+            <WebsiteCard key={website.id} website={website} />
+          ))}
+        </div>
+      </SortableContext>
 
       {/* Empty State */}
       {categoryWebsites.length === 0 && (

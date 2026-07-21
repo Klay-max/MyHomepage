@@ -70,6 +70,39 @@ export const useStore = create<AppState>()(
         set({ websites: [...otherWebsites, ...reordered] });
       },
 
+      moveWebsite: (activeId, overId) => {
+        const { websites } = get();
+        const active = websites.find(w => w.id === activeId);
+        const over = websites.find(w => w.id === overId);
+        if (!active || !over) return;
+
+        const newCategoryId = active.categoryId === over.categoryId
+          ? active.categoryId
+          : over.categoryId;
+
+        // Build new websites array grouped by category
+        const categoryIds = [...new Set(websites.map(w => w.categoryId))];
+        const result: Website[] = [];
+
+        for (const catId of categoryIds) {
+          // Get all websites in this category, excluding the one being moved
+          const catWebsites = websites
+            .filter(w => w.categoryId === catId && w.id !== activeId);
+
+          if (catId === newCategoryId) {
+            // Insert the moved website at the target position
+            const insertIndex = catWebsites.findIndex(w => w.id === overId);
+            catWebsites.splice(insertIndex, 0, { ...active, categoryId: newCategoryId });
+          }
+
+          // Re-index
+          catWebsites.forEach((w, i) => { w.order = i; });
+          result.push(...catWebsites);
+        }
+
+        set({ websites: result });
+      },
+
       // Category actions
       addCategory: (name) => {
         const categories = get().categories;

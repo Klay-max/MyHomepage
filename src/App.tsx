@@ -10,7 +10,7 @@ import { AddWebsiteModal } from './components/AddWebsiteModal';
 import { SettingsPanel } from './components/SettingsPanel';
 
 function App() {
-  const { categories, settings, reorderCategories, addCategory } = useStore();
+  const { categories, websites, settings, reorderCategories, moveWebsite, addCategory } = useStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
@@ -19,7 +19,9 @@ function App() {
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -27,10 +29,22 @@ function App() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = sortedCategories.findIndex((c) => c.id === active.id);
-      const newIndex = sortedCategories.findIndex((c) => c.id === over.id);
-      reorderCategories(oldIndex, newIndex);
+    if (!over || active.id === over.id) return;
+
+    // Check if dragging a category or a website
+    const isCategory = categories.some(c => c.id === active.id);
+    const isWebsite = websites.some(w => w.id === active.id);
+
+    if (isCategory) {
+      // Reorder categories
+      const oldIndex = sortedCategories.findIndex(c => c.id === active.id);
+      const newIndex = sortedCategories.findIndex(c => c.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        reorderCategories(oldIndex, newIndex);
+      }
+    } else if (isWebsite) {
+      // Move/reorder website (supports cross-category drag)
+      moveWebsite(String(active.id), String(over.id));
     }
   };
 

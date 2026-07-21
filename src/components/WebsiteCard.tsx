@@ -41,12 +41,12 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       className="group relative"
     >
       <button
         onClick={handleClick}
-        className="w-full flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100 hover:bg-white hover:shadow-lg transition-all duration-300"
+        {...listeners}
+        className="w-full flex flex-col items-center gap-3 p-4 rounded-2xl bg-white/60 backdrop-blur-sm border border-gray-100 hover:bg-white hover:shadow-lg transition-all duration-300 cursor-pointer"
       >
         {/* Icon */}
         <div className={`${iconSizeClass} rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden`}>
@@ -81,7 +81,7 @@ export function WebsiteCard({ website }: WebsiteCardProps) {
             deleteWebsite(website.id);
           }
         }}
-        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-sm hover:bg-red-600"
+        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center shadow-sm hover:bg-red-600 hover:cursor-pointer"
       >
         <Trash2 className="w-3 h-3" />
       </button>

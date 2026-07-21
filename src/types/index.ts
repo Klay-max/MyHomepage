@@ -43,6 +43,7 @@ export interface AppState {
   updateWebsite: (id: string, updates: Partial<Website>) => void;
   deleteWebsite: (id: string) => void;
   reorderWebsites: (categoryId: string, oldIndex: number, newIndex: number) => void;
+  moveWebsite: (activeId: string, overId: string) => void;
   
   // Categories
   addCategory: (name: string) => void;
