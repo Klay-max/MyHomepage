@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Plus, Settings, Sun, Moon, LayoutGrid, Move } from 'lucide-react';
 import {
   DndContext,
@@ -169,7 +169,7 @@ function App() {
     }
   };
 
-  const getBackgroundClass = () => {
+  const bgClass = useMemo(() => {
     switch (settings.background) {
       case 'white':
         return 'bg-white dark:bg-gray-950';
@@ -179,7 +179,7 @@ function App() {
       default:
         return 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900';
     }
-  };
+  }, [settings.background]);
 
   // Initialize positions for websites without x,y in free mode
   useEffect(() => {
@@ -188,7 +188,7 @@ function App() {
   }, [isFreeLayout]);
 
   return (
-    <div className={`min-h-screen ${getBackgroundClass()} transition-colors duration-500`}>
+    <div className={`min-h-screen ${bgClass} transition-colors duration-500`}>
       {/* Header */}
       <header className="sticky top-0 z-40 glass border-b border-gray-200/50 dark:border-gray-700/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

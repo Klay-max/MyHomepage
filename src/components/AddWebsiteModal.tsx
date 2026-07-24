@@ -26,10 +26,7 @@ export function AddWebsiteModal({ isOpen, onClose, defaultCategoryId }: AddWebsi
     
     // Create new category if needed
     if (showNewCategory && newCategoryName.trim()) {
-      addCategory(newCategoryName.trim());
-      // Get the newly created category (it will be the last one)
-      const newCategories = useStore.getState().categories;
-      finalCategoryId = newCategories[newCategories.length - 1].id;
+      finalCategoryId = addCategory(newCategoryName.trim());
     }
 
     const normalizedUrl = normalizeUrl(url);

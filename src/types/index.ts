@@ -57,7 +57,7 @@ export interface AppState {
   moveWebsiteToCategory: (id: string, categoryId: string) => void;
   
   // Categories
-  addCategory: (name: string) => void;
+  addCategory: (name: string) => string;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
   reorderCategories: (oldIndex: number, newIndex: number) => void;

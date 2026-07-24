@@ -89,13 +89,12 @@ export const useStore = create<AppState>()(
         const isSameCategory = active.categoryId === over.categoryId;
         const newCategoryId = over.categoryId;
 
-        // Build new websites array
+        // Build new websites array (immutable style)
         const result: Website[] = [];
         const categoryIds = [...new Set(websites.map(w => w.categoryId))];
 
         for (const catId of categoryIds) {
           if (catId === newCategoryId) {
-            // Target category - need to insert the moved item
             if (isSameCategory) {
               // Same category: reorder within this category
               const catWebsites = websites
@@ -103,27 +102,26 @@ export const useStore = create<AppState>()(
                 .sort((a, b) => a.order - b.order);
               const oldIndex = catWebsites.findIndex(w => w.id === activeId);
               const newIndex = catWebsites.findIndex(w => w.id === overId);
-              const [moved] = catWebsites.splice(oldIndex, 1);
-              catWebsites.splice(newIndex, 0, moved);
-              catWebsites.forEach((w, i) => { w.order = i; });
-              result.push(...catWebsites);
+              const reordered = [...catWebsites];
+              const [moved] = reordered.splice(oldIndex, 1);
+              reordered.splice(newIndex, 0, moved);
+              result.push(...reordered.map((w, i) => ({ ...w, order: i })));
             } else {
               // Different category: move to target category
               const catWebsites = websites
                 .filter(w => w.categoryId === catId && w.id !== activeId)
                 .sort((a, b) => a.order - b.order);
               const insertIndex = catWebsites.findIndex(w => w.id === overId);
-              catWebsites.splice(insertIndex, 0, { ...active, categoryId: newCategoryId });
-              catWebsites.forEach((w, i) => { w.order = i; });
-              result.push(...catWebsites);
+              const reordered = [...catWebsites];
+              reordered.splice(insertIndex, 0, { ...active, categoryId: newCategoryId });
+              result.push(...reordered.map((w, i) => ({ ...w, order: i })));
             }
           } else if (catId === active.categoryId && !isSameCategory) {
-            // Source category (when moving to different category) - remove the item
+            // Source category - remove the item
             const catWebsites = websites
               .filter(w => w.categoryId === catId && w.id !== activeId)
               .sort((a, b) => a.order - b.order);
-            catWebsites.forEach((w, i) => { w.order = i; });
-            result.push(...catWebsites);
+            result.push(...catWebsites.map((w, i) => ({ ...w, order: i })));
           } else {
             // Other categories - keep as is
             const catWebsites = websites
@@ -161,6 +159,7 @@ export const useStore = create<AppState>()(
           order: maxOrder + 1,
         };
         set({ categories: [...categories, newCategory] });
+        return newCategory.id;
       },
 
       updateCategory: (id, name) => {
@@ -226,6 +225,10 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'myhomepage-storage',
+      partialize: (state) => {
+        const { searchQuery, searchResults, ...rest } = state;
+        return rest;
+      },
     }
   )
 );
