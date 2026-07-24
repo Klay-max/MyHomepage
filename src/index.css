@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* Custom theme values (Tailwind v4 - replaces tailwind.config.js) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, 'Segoe UI', system-ui, sans-serif;
   
@@ -58,4 +59,28 @@ body {
   background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(20, 20, 20, 0.8);
+  border: 1px solid rgba(60, 60, 60, 0.3);
+}
+
+/* Dark mode background transition */
+.dark body {
+  background: #111827;
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.dark ::selection {
+  background: #e5e7eb;
+  color: #111827;
 }

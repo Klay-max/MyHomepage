@@ -33,6 +33,9 @@ export const useStore = create<AppState>()(
         iconSize: 'medium',
         density: 'comfortable',
         background: 'gradient',
+        theme: 'system',
+        searchEngine: 'baidu',
+        layoutMode: 'grid',
         showSearch: true,
         showTodo: true,
       },
@@ -131,6 +134,21 @@ export const useStore = create<AppState>()(
         }
 
         set({ websites: result });
+      },
+
+      updateWebsitePosition: (id, x, y) => {
+        set({
+          websites: get().websites.map(w => w.id === id ? { ...w, x: Math.round(x), y: Math.round(y) } : w),
+        });
+      },
+
+      moveWebsiteToCategory: (id, categoryId) => {
+        const websites = get().websites;
+        const targetCategoryWebsites = websites.filter(w => w.categoryId === categoryId);
+        const maxOrder = Math.max(...targetCategoryWebsites.map(w => w.order), -1);
+        set({
+          websites: websites.map(w => w.id === id ? { ...w, categoryId, order: maxOrder + 1 } : w),
+        });
       },
 
       // Category actions

@@ -1,12 +1,22 @@
-// Get favicon URL for a website
-export const getFaviconUrl = (url: string): string => {
+import type { SearchEngine } from '../types';
+
+// Get favicon sources for a website (multi-source fallback, China-friendly)
+export const getFaviconSources = (url: string): string[] => {
   try {
     const domain = new URL(url).hostname;
-    // Use Google's favicon service
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    return [
+      `https://${domain}/favicon.ico`,
+      `https://api.iowen.cn/favicon/${domain}.png`,
+      `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+    ];
   } catch {
-    return '';
+    return [];
   }
+};
+
+export const getFaviconUrl = (url: string): string => {
+  const sources = getFaviconSources(url);
+  return sources[0] || '';
 };
 
 // Format URL for display
@@ -42,7 +52,7 @@ export const getIconSizeClass = (size: 'small' | 'medium' | 'large'): string => 
   const sizes = {
     small: 'w-10 h-10',
     medium: 'w-14 h-14',
-    large: 'w-18 h-18',
+    large: 'w-16 h-16',
   };
   return sizes[size];
 };
@@ -65,4 +75,24 @@ export const getDensityPaddingClass = (density: 'compact' | 'comfortable' | 'spa
     spacious: 'p-6',
   };
   return paddings[density];
+};
+
+// Search engine URLs
+
+export const getSearchEngineUrl = (engine: SearchEngine, query: string): string => {
+  const engines = {
+    baidu: `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`,
+    google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+    bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+  };
+  return engines[engine];
+};
+
+export const getSearchEngineName = (engine: SearchEngine): string => {
+  const names = {
+    baidu: '百度',
+    google: 'Google',
+    bing: 'Bing',
+  };
+  return names[engine];
 };

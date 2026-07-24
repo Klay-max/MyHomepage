@@ -6,6 +6,8 @@ export interface Website {
   icon?: string;
   categoryId: string;
   order: number;
+  x?: number;
+  y?: number;
 }
 
 export interface Category {
@@ -25,11 +27,18 @@ export interface Todo {
 // Settings types
 export type IconSize = 'small' | 'medium' | 'large';
 export type Density = 'compact' | 'comfortable' | 'spacious';
+export type Theme = 'light' | 'dark' | 'system';
+export type SearchEngine = 'baidu' | 'google' | 'bing';
+
+export type LayoutMode = 'grid' | 'free';
 
 export interface Settings {
   iconSize: IconSize;
   density: Density;
   background: string;
+  theme: Theme;
+  searchEngine: SearchEngine;
+  layoutMode: LayoutMode;
   showSearch: boolean;
   showTodo: boolean;
 }
@@ -44,6 +53,8 @@ export interface AppState {
   deleteWebsite: (id: string) => void;
   reorderWebsites: (categoryId: string, oldIndex: number, newIndex: number) => void;
   moveWebsite: (activeId: string, overId: string) => void;
+  updateWebsitePosition: (id: string, x: number, y: number) => void;
+  moveWebsiteToCategory: (id: string, categoryId: string) => void;
   
   // Categories
   addCategory: (name: string) => void;
