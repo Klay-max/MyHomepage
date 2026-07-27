@@ -6,8 +6,9 @@ export interface Website {
   icon?: string;
   categoryId: string;
   order: number;
-  x?: number;
-  y?: number;
+  // Grid-based position (cross-device friendly)
+  gridCol?: number;
+  gridRow?: number;
 }
 
 export interface Category {
@@ -36,6 +37,7 @@ export interface Settings {
   iconSize: IconSize;
   density: Density;
   background: string;
+  backgroundImage?: string;
   theme: Theme;
   searchEngine: SearchEngine;
   layoutMode: LayoutMode;
@@ -53,14 +55,16 @@ export interface AppState {
   deleteWebsite: (id: string) => void;
   reorderWebsites: (categoryId: string, oldIndex: number, newIndex: number) => void;
   moveWebsite: (activeId: string, overId: string) => void;
-  updateWebsitePosition: (id: string, x: number, y: number) => void;
-  moveWebsiteToCategory: (id: string, categoryId: string) => void;
+  updateWebsitePosition: (id: string, gridCol: number, gridRow: number) => void;
+  moveWebsiteToCategory: (id: string, categoryId: string, gridCol?: number, gridRow?: number) => void;
   
   // Categories
   addCategory: (name: string) => string;
   updateCategory: (id: string, name: string) => void;
   deleteCategory: (id: string) => void;
   reorderCategories: (oldIndex: number, newIndex: number) => void;
+  collapsedCategories: string[];
+  toggleCategoryCollapse: (id: string) => void;
   
   // Todos
   todos: Todo[];
@@ -71,6 +75,9 @@ export interface AppState {
   // Settings
   settings: Settings;
   updateSettings: (settings: Partial<Settings>) => void;
+  
+  // Data management
+  importData: (data: { websites: Website[]; categories: Category[]; todos?: Todo[] }) => void;
   
   // Search
   searchQuery: string;

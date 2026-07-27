@@ -36,25 +36,25 @@ export function ConfirmDialog({
         className="absolute inset-0 bg-black/30 backdrop-blur-sm dark:bg-black/50"
         onClick={onCancel}
       />
-      <div className="relative w-full max-w-sm bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
-        <div className="px-6 pt-6 pb-4 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-            <AlertTriangle className="w-6 h-6 text-red-500 dark:text-red-400" />
+      <div className="relative w-full max-w-sm bg-surface rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
+        <div className="px-6 pt-7 pb-5 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center mb-4">
+            <AlertTriangle className="w-6 h-6 text-danger" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{message}</p>
+          <h3 className="text-lg font-semibold text-ink tracking-tight">{title}</h3>
+          <p className="mt-2 text-sm text-ink-secondary leading-relaxed">{message}</p>
         </div>
-        <div className="flex border-t border-gray-100 dark:border-gray-700">
+        <div className="flex border-t border-line-light">
           <button
             onClick={onCancel}
-            className="flex-1 py-3.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors rounded-bl-3xl"
+            className="flex-1 py-3.5 text-sm font-medium text-ink-secondary hover:bg-surface-hover transition-colors rounded-bl-3xl"
             autoFocus
           >
             取消
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-3.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-l border-gray-100 dark:border-gray-700 rounded-br-3xl"
+            className="flex-1 py-3.5 text-sm font-medium text-danger hover:bg-danger-soft transition-colors border-l border-line-light rounded-br-3xl"
           >
             {confirmLabel}
           </button>

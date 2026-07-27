@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppState, Website, Category, Todo } from '../types';
+import { GRID_SIZE_X, GRID_SIZE_Y } from '../utils';
 
 // Generate unique ID
 const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -35,10 +36,11 @@ export const useStore = create<AppState>()(
         background: 'gradient',
         theme: 'system',
         searchEngine: 'baidu',
-        layoutMode: 'grid',
+        layoutMode: 'free',
         showSearch: true,
         showTodo: true,
       },
+      collapsedCategories: [] as string[],
       searchQuery: '',
       searchResults: [],
 
@@ -69,12 +71,10 @@ export const useStore = create<AppState>()(
         const categoryWebsites = allWebsites.filter(w => w.categoryId === categoryId);
         const otherWebsites = allWebsites.filter(w => w.categoryId !== categoryId);
         
-        // Create new array to avoid mutating original
         const newCategoryWebsites = [...categoryWebsites];
         const [moved] = newCategoryWebsites.splice(oldIndex, 1);
         newCategoryWebsites.splice(newIndex, 0, moved);
         
-        // Update order property
         const reordered = newCategoryWebsites.map((w, i) => ({ ...w, order: i }));
         
         set({ websites: [...otherWebsites, ...reordered] });
@@ -89,14 +89,12 @@ export const useStore = create<AppState>()(
         const isSameCategory = active.categoryId === over.categoryId;
         const newCategoryId = over.categoryId;
 
-        // Build new websites array (immutable style)
         const result: Website[] = [];
         const categoryIds = [...new Set(websites.map(w => w.categoryId))];
 
         for (const catId of categoryIds) {
           if (catId === newCategoryId) {
             if (isSameCategory) {
-              // Same category: reorder within this category
               const catWebsites = websites
                 .filter(w => w.categoryId === catId)
                 .sort((a, b) => a.order - b.order);
@@ -107,7 +105,6 @@ export const useStore = create<AppState>()(
               reordered.splice(newIndex, 0, moved);
               result.push(...reordered.map((w, i) => ({ ...w, order: i })));
             } else {
-              // Different category: move to target category
               const catWebsites = websites
                 .filter(w => w.categoryId === catId && w.id !== activeId)
                 .sort((a, b) => a.order - b.order);
@@ -117,13 +114,11 @@ export const useStore = create<AppState>()(
               result.push(...reordered.map((w, i) => ({ ...w, order: i })));
             }
           } else if (catId === active.categoryId && !isSameCategory) {
-            // Source category - remove the item
             const catWebsites = websites
               .filter(w => w.categoryId === catId && w.id !== activeId)
               .sort((a, b) => a.order - b.order);
             result.push(...catWebsites.map((w, i) => ({ ...w, order: i })));
           } else {
-            // Other categories - keep as is
             const catWebsites = websites
               .filter(w => w.categoryId === catId)
               .sort((a, b) => a.order - b.order);
@@ -134,18 +129,26 @@ export const useStore = create<AppState>()(
         set({ websites: result });
       },
 
-      updateWebsitePosition: (id, x, y) => {
+      updateWebsitePosition: (id, gridCol, gridRow) => {
         set({
-          websites: get().websites.map(w => w.id === id ? { ...w, x: Math.round(x), y: Math.round(y) } : w),
+          websites: get().websites.map(w =>
+            w.id === id ? { ...w, gridCol, gridRow } : w
+          ),
         });
       },
 
-      moveWebsiteToCategory: (id, categoryId) => {
+      moveWebsiteToCategory: (id, categoryId, gridCol, gridRow) => {
         const websites = get().websites;
         const targetCategoryWebsites = websites.filter(w => w.categoryId === categoryId);
         const maxOrder = Math.max(...targetCategoryWebsites.map(w => w.order), -1);
+        const positionUpdates = gridCol !== undefined && gridRow !== undefined
+          ? { gridCol, gridRow }
+          : {};
         set({
-          websites: websites.map(w => w.id === id ? { ...w, categoryId, order: maxOrder + 1 } : w),
+          websites: websites.map(w => w.id === id
+            ? { ...w, categoryId, order: maxOrder + 1, ...positionUpdates }
+            : w
+          ),
         });
       },
 
@@ -181,6 +184,14 @@ export const useStore = create<AppState>()(
         const [moved] = categories.splice(oldIndex, 1);
         categories.splice(newIndex, 0, moved);
         set({ categories: categories.map((c, i) => ({ ...c, order: i })) });
+      },
+
+      toggleCategoryCollapse: (id) => {
+        const collapsed = get().collapsedCategories;
+        const newCollapsed = collapsed.includes(id)
+          ? collapsed.filter(c => c !== id)
+          : [...collapsed, id];
+        set({ collapsedCategories: newCollapsed });
       },
 
       // Todo actions
@@ -222,9 +233,47 @@ export const useStore = create<AppState>()(
           : [];
         set({ searchQuery: query, searchResults: results });
       },
+
+      // Import data
+      importData: (data) => {
+        set({
+          websites: data.websites,
+          categories: data.categories,
+          todos: data.todos || [],
+        });
+      },
     }),
     {
       name: 'myhomepage-storage',
+      version: 3,
+      migrate: (persistedState: unknown, version: number) => {
+        const state = persistedState as Record<string, unknown>;
+        const settings = (state?.settings ?? {}) as Record<string, unknown>;
+
+        // v1 → v2: default to free layout
+        if (version < 2 && settings.layoutMode !== 'free') {
+          settings.layoutMode = 'free';
+        }
+
+        // v2 → v3: convert x/y pixels to gridCol/gridRow
+        if (version < 3) {
+          const websites = (state?.websites ?? []) as Array<Record<string, unknown>>;
+          for (const w of websites) {
+            if (w.x !== undefined || w.y !== undefined) {
+              const x = (w.x as number) ?? 0;
+              const y = (w.y as number) ?? 0;
+              w.gridCol = Math.round(x / GRID_SIZE_X);
+              w.gridRow = Math.round(y / GRID_SIZE_Y);
+              delete w.x;
+              delete w.y;
+            }
+          }
+          state.websites = websites;
+        }
+
+        state.settings = settings;
+        return state;
+      },
       partialize: (state) => {
         const { searchQuery, searchResults, ...rest } = state;
         return rest;

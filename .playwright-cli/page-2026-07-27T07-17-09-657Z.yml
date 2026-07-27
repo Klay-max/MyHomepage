@@ -1,0 +1,121 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e6]:
+      - heading "MyHomepage" [level=1] [ref=e7]
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - generic [ref=e10]: 07/27周一
+          - generic [ref=e11]:
+            - text: 15:17
+            - generic [ref=e12]: :09
+        - button "切换到网格布局" [ref=e14]
+        - button "切换暗色模式" [ref=e20]
+        - button "添加网站" [ref=e23]
+        - button "设置" [ref=e25]
+  - main [ref=e29]:
+    - generic [ref=e33]:
+      - textbox "搜索收藏的网站，或输入网址..." [ref=e34]
+      - button [ref=e35]
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - button [ref=e41]
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - generic [ref=e51]:
+                - button "折叠" [ref=e52]
+                - heading "工作" [level=2] [ref=e55]
+                - generic [ref=e56]: "2"
+              - generic [ref=e57]:
+                - button "编辑分类" [ref=e58]
+                - button "删除分类" [ref=e61]
+                - button "添加网站" [ref=e65]
+            - generic [ref=e68]:
+              - generic [ref=e69]:
+                - button [ref=e70]:
+                  - img "GitHub" [ref=e72]
+                  - generic [ref=e73]:
+                    - paragraph [ref=e74]: GitHub
+                    - paragraph [ref=e75]: github.com
+                - button "编辑" [ref=e76] [cursor=pointer]
+                - button "删除" [ref=e80] [cursor=pointer]
+              - generic [ref=e84]:
+                - button [ref=e85]:
+                  - img "Vercel" [ref=e87]
+                  - generic [ref=e88]:
+                    - paragraph [ref=e89]: Vercel
+                    - paragraph [ref=e90]: vercel.com
+                - button "编辑" [ref=e91] [cursor=pointer]
+                - button "删除" [ref=e95] [cursor=pointer]
+        - generic [ref=e99]:
+          - button [ref=e100]
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - generic [ref=e110]:
+                - button "折叠" [ref=e111]
+                - heading "学习" [level=2] [ref=e114]
+                - generic [ref=e115]: "1"
+              - generic [ref=e116]:
+                - button "编辑分类" [ref=e117]
+                - button "删除分类" [ref=e120]
+                - button "添加网站" [ref=e124]
+            - generic [ref=e128]:
+              - button [ref=e129]:
+                - img "知乎" [ref=e131]
+                - generic [ref=e132]:
+                  - paragraph [ref=e133]: 知乎
+                  - paragraph [ref=e134]: zhihu.com
+              - button "编辑" [ref=e135] [cursor=pointer]
+              - button "删除" [ref=e139] [cursor=pointer]
+        - generic [ref=e143]:
+          - button [ref=e144]
+          - generic [ref=e152]:
+            - generic [ref=e153]:
+              - generic [ref=e154]:
+                - button "折叠" [ref=e155]
+                - heading "工具" [level=2] [ref=e158]
+                - generic [ref=e159]: "1"
+              - generic [ref=e160]:
+                - button "编辑分类" [ref=e161]
+                - button "删除分类" [ref=e164]
+                - button "添加网站" [ref=e168]
+            - generic [ref=e172]:
+              - button [ref=e173]:
+                - img "DeepSeek" [ref=e175]
+                - generic [ref=e176]:
+                  - paragraph [ref=e177]: DeepSeek
+                  - paragraph [ref=e178]: chat.deepseek.com
+              - button "编辑" [ref=e179] [cursor=pointer]
+              - button "删除" [ref=e183] [cursor=pointer]
+        - generic [ref=e187]:
+          - button [ref=e188]
+          - generic [ref=e196]:
+            - generic [ref=e197]:
+              - generic [ref=e198]:
+                - button "折叠" [ref=e199]
+                - heading "娱乐" [level=2] [ref=e202]
+                - generic [ref=e203]: "1"
+              - generic [ref=e204]:
+                - button "编辑分类" [ref=e205]
+                - button "删除分类" [ref=e208]
+                - button "添加网站" [ref=e212]
+            - generic [ref=e216]:
+              - button [ref=e217]:
+                - img "Bilibili" [ref=e219]
+                - generic [ref=e220]:
+                  - paragraph [ref=e221]: Bilibili
+                  - paragraph [ref=e222]: bilibili.com
+              - button "编辑" [ref=e223] [cursor=pointer]
+              - button "删除" [ref=e227] [cursor=pointer]
+        - status [ref=e231]
+        - button "新建分类" [ref=e232]
+      - generic [ref=e236]:
+        - generic [ref=e238]:
+          - heading "待办事项" [level=3] [ref=e242]
+          - generic [ref=e243]: 0/0
+        - generic [ref=e245]:
+          - paragraph [ref=e246]: 暂无待办事项
+          - paragraph [ref=e247]: 添加一个开始吧
+        - generic [ref=e249]:
+          - textbox "添加新事项..." [ref=e250]
+          - button [disabled] [ref=e251]

@@ -2,20 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Trash2, Edit2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit2, GripVertical, ChevronDown } from 'lucide-react';
 import { useStore } from '../store';
 import { WebsiteCard } from './WebsiteCard';
 import { AddWebsiteModal } from './AddWebsiteModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import type { Category } from '../types';
-import { getDensityGapClass } from '../utils';
+
+const FREE_CANVAS_MIN_HEIGHT = 360;
 
 interface CategorySectionProps {
   category: Category;
   isFreeLayout: boolean;
 }
 
-// Sortable wrapper for category reordering
 function SortableCategory({ category, children }: { category: Category; children: React.ReactNode }) {
   const {
     attributes,
@@ -29,7 +29,7 @@ function SortableCategory({ category, children }: { category: Category; children
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   };
 
   return (
@@ -37,9 +37,9 @@ function SortableCategory({ category, children }: { category: Category; children
       <div
         {...attributes}
         {...listeners}
-        className="absolute left-0 top-0 -ml-8 h-full flex items-center cursor-grab active:cursor-grabbing opacity-0 hover:opacity-100 transition-opacity"
+        className="absolute left-0 top-0 -ml-7 h-full flex items-center cursor-grab active:cursor-grabbing opacity-0 hover:opacity-100 transition-opacity z-10"
       >
-        <GripVertical className="w-5 h-5 text-gray-400" />
+        <GripVertical className="w-4 h-4 text-ink-tertiary" />
       </div>
       {children}
     </div>
@@ -47,7 +47,7 @@ function SortableCategory({ category, children }: { category: Category; children
 }
 
 export function CategorySection({ category, isFreeLayout }: CategorySectionProps) {
-  const { websites, settings, deleteCategory, updateCategory, updateWebsitePosition } = useStore();
+  const { websites, deleteCategory, updateCategory, updateWebsitePosition, collapsedCategories, toggleCategoryCollapse } = useStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
@@ -55,17 +55,24 @@ export function CategorySection({ category, isFreeLayout }: CategorySectionProps
   const [isOver, setIsOver] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
+  const isCollapsed = collapsedCategories.includes(category.id);
+
   const categoryWebsites = websites
     .filter((w) => w.categoryId === category.id)
     .sort((a, b) => a.order - b.order);
 
-  // Droppable for receiving dragged websites
+  const freeCanvasHeight = isFreeLayout
+    ? Math.max(
+        FREE_CANVAS_MIN_HEIGHT,
+        ...categoryWebsites.map((website) => ((website.gridRow ?? 0) * 110) + 116)
+      )
+    : undefined;
+
   const droppableId = `droppable-cat-${category.id}`;
   const { setNodeRef: setDroppableRef, isOver: isDroppableOver } = useDroppable({
     id: droppableId,
   });
 
-  // Track hover state locally too for visual feedback
   useEffect(() => {
     setIsOver(isDroppableOver);
   }, [isDroppableOver]);
@@ -77,20 +84,17 @@ export function CategorySection({ category, isFreeLayout }: CategorySectionProps
     }
   };
 
-  // Initialize website positions in free mode if they don't have x,y
+  // Initialize grid positions for websites without coordinates
   useEffect(() => {
     if (!isFreeLayout) return;
     categoryWebsites.forEach((website, index) => {
-      if (website.x === undefined || website.y === undefined) {
-        // Compute default positions in a grid-like pattern
+      if (website.gridCol === undefined || website.gridRow === undefined) {
         const col = index % 4;
         const row = Math.floor(index / 4);
-        updateWebsitePosition(website.id, col * 130, row * 110);
+        updateWebsitePosition(website.id, col, row);
       }
     });
   }, [isFreeLayout, categoryWebsites.length]);
-
-  const densityGap = getDensityGapClass(settings.density);
 
   return (
     <SortableCategory category={category}>
@@ -99,122 +103,148 @@ export function CategorySection({ category, isFreeLayout }: CategorySectionProps
           (sectionRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
           setDroppableRef(node);
         }}
-        className={`mb-8 ${isFreeLayout ? 'relative min-h-[200px]' : ''}`}
+        className={`mb-12 ${isFreeLayout ? 'relative min-h-[180px]' : ''}`}
       >
         <ConfirmDialog
           isOpen={showDeleteConfirm}
           title="删除分类"
-          message={`确定要删除「${category.name}」分类吗？其中的所有网站也会被删除。此操作不可撤销。`}
+          message={`确定要删除「${category.name}」分类吗？其中的所有网站也会被删除。`}
           onConfirm={() => { deleteCategory(category.id); setShowDeleteConfirm(false); }}
           onCancel={() => setShowDeleteConfirm(false)}
         />
 
         {/* Category Header */}
-        <div className="flex items-center justify-between mb-4">
-          {isEditing ? (
-            <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-5 px-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => toggleCategoryCollapse(category.id)}
+              className="p-1 rounded-md hover:bg-surface-hover transition-colors"
+              title={isCollapsed ? '展开' : '折叠'}
+            >
+              <ChevronDown className={`w-4 h-4 text-ink-tertiary transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`} />
+            </button>
+            {isEditing ? (
               <input
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 onBlur={handleSaveEdit}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
-                className="px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-400"
+                className="px-3 py-1.5 rounded-lg bg-surface border border-line text-[15px] font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 autoFocus
               />
-            </div>
-          ) : (
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{category.name}</h2>
-          )}
+            ) : (
+              <h2 className="text-[15px] font-semibold text-ink tracking-tight">
+                {category.name}
+              </h2>
+            )}
+            <span className="text-xs text-ink-tertiary font-medium ml-0.5 tabular-nums">
+              {categoryWebsites.length}
+            </span>
+          </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <button
               onClick={() => setIsEditing(true)}
-              className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded-lg text-ink-tertiary hover:text-ink hover:bg-surface-hover transition-all"
               title="编辑分类"
             >
-              <Edit2 className="w-4 h-4" />
+              <Edit2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="p-1.5 rounded-lg text-ink-tertiary hover:text-danger hover:bg-danger-soft transition-all"
               title="删除分类"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="p-2 rounded-xl text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded-lg text-ink-tertiary hover:text-ink hover:bg-surface-hover transition-all"
               title="添加网站"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Websites area */}
-        {isFreeLayout ? (
-          <div
-            className={`relative rounded-2xl border-2 border-dashed transition-colors min-h-[80px] ${
-              isOver
-                ? 'border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-900/10'
-                : 'border-gray-200 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/30'
-            }`}
-          >
-            {categoryWebsites.map((website) => (
-              <WebsiteCard
-                key={website.id}
-                website={website}
-                isFreeLayout={true}
-              />
-            ))}
-            {categoryWebsites.length === 0 && (
-              <div className="py-12 text-center">
-                <p className="text-sm text-gray-400 dark:text-gray-500">
-                  {isOver ? '松开放入此分类' : '拖拽网站到这里，或点击 + 添加'}
-                </p>
-              </div>
-            )}
-            {isOver && categoryWebsites.length > 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <p className="text-sm font-medium text-blue-500 bg-white/80 dark:bg-gray-900/80 px-3 py-1 rounded-lg">
-                  松开放入此分类
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div
-            className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${densityGap} p-2 rounded-2xl transition-colors ${
-              isOver
-                ? 'bg-blue-50/50 dark:bg-blue-900/10 ring-2 ring-blue-400 dark:ring-blue-500'
-                : ''
-            }`}
-          >
-            {categoryWebsites.map((website) => (
-              <WebsiteCard
-                key={website.id}
-                website={website}
-                isFreeLayout={false}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Empty state for grid mode */}
-        {!isFreeLayout && categoryWebsites.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="text-sm text-gray-400 dark:text-gray-500">暂无网站</p>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="mt-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline"
+        {/* Websites area — collapsible */}
+        <div className={`overflow-hidden transition-[max-height,opacity] duration-400 ease-out ${
+          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[3000px] opacity-100'
+        }`}>
+          {isFreeLayout ? (
+            <div
+              data-category-canvas={category.id}
+              className={`relative rounded-2xl border-2 border-dashed transition-all min-h-[100px] ${
+                isOver
+                  ? 'border-accent/60 bg-accent-soft/20 shadow-[inset_0_0_40px_rgba(0,113,227,0.04)]'
+                  : 'border-line-light dark:border-line bg-canvas/40'
+              }`}
+              style={{
+                minHeight: freeCanvasHeight,
+                backgroundImage: isOver ? 'none' : `
+                  radial-gradient(circle, var(--color-line-light) 1px, transparent 1px)
+                `.trim(),
+                backgroundSize: '130px 110px',
+                backgroundPosition: '0 0',
+              }}
             >
-              添加一个
-            </button>
-          </div>
-        )}
+              {categoryWebsites.map((website) => (
+                <WebsiteCard
+                  key={website.id}
+                  website={website}
+                  isFreeLayout={true}
+                />
+              ))}
 
-        {/* Add Website Modal */}
+              {/* Empty state */}
+              {categoryWebsites.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className="text-sm text-ink-tertiary">
+                    {isOver ? '松开放入此分类' : '拖拽网站到此处，或点击 + 添加'}
+                  </p>
+                </div>
+              )}
+
+              {/* Drop indicator */}
+              {isOver && categoryWebsites.length > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="px-4 py-2 rounded-full bg-accent text-white text-sm font-medium shadow-lg">
+                    松开放入此分类
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Grid mode */
+            <div
+              className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3 p-2 rounded-2xl transition-all ${
+                isOver ? 'bg-accent-soft/30 ring-2 ring-accent/30' : ''
+              }`}
+            >
+              {categoryWebsites.map((website) => (
+                <WebsiteCard
+                  key={website.id}
+                  website={website}
+                  isFreeLayout={false}
+                />
+              ))}
+
+              {categoryWebsites.length === 0 && (
+                <div className="col-span-full py-16 text-center">
+                  <p className="text-sm text-ink-tertiary mb-3">暂无网站</p>
+                  <button
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="text-sm text-accent hover:text-accent-hover font-medium transition-colors"
+                  >
+                    添加一个
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         <AddWebsiteModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}

@@ -17,9 +17,34 @@ import { useStore } from './store';
 import { SearchBox } from './components/SearchBox';
 import { CategorySection } from './components/CategorySection';
 import { TodoWidget } from './components/TodoWidget';
+import { ClockWidget } from './components/ClockWidget';
 import { AddWebsiteModal } from './components/AddWebsiteModal';
 import { SettingsPanel } from './components/SettingsPanel';
 import { WebsiteDragPreview } from './components/WebsiteDragPreview';
+import { createSnapToGridModifier, GRID_SIZE_X, GRID_SIZE_Y } from './utils';
+
+const getCategoryCanvas = (categoryId: string) =>
+  document.querySelector<HTMLElement>(`[data-category-canvas="${categoryId}"]`);
+
+const getCategoryIdAtRect = (rect: { left: number; top: number; width: number; height: number }) => {
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const canvases = document.querySelectorAll<HTMLElement>('[data-category-canvas]');
+
+  for (const canvas of canvases) {
+    const canvasRect = canvas.getBoundingClientRect();
+    if (
+      centerX >= canvasRect.left &&
+      centerX <= canvasRect.right &&
+      centerY >= canvasRect.top &&
+      centerY <= canvasRect.bottom
+    ) {
+      return canvas.dataset.categoryCanvas ?? null;
+    }
+  }
+
+  return null;
+};
 
 function App() {
   const { categories, settings, websites, reorderCategories, addCategory, updateSettings, updateWebsitePosition, moveWebsiteToCategory, reorderWebsites } = useStore();
@@ -86,14 +111,21 @@ function App() {
   }, [isAddModalOpen, isSettingsOpen, showNewCategory]);
 
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
+  const websiteCount = websites.length;
+  const categoryCount = categories.length;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
+  );
+
+  const snapModifier = useMemo(
+    () => createSnapToGridModifier(GRID_SIZE_X, GRID_SIZE_Y),
+    []
   );
 
   // Find the active website for drag overlay
@@ -104,49 +136,63 @@ function App() {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active, over, delta } = event;
     setActiveId(null);
 
     const activeIdStr = String(active.id);
     const isCategory = sortedCategories.some(c => c.id === activeIdStr);
 
-    // ---- Website drag: ALWAYS update position, regardless of "over" ----
+    // ---- Website drag ----
     if (!isCategory) {
       const website = websites.find(w => w.id === activeIdStr);
-      if (website) {
-        const delta = event.delta;
-        const newX = (website.x ?? 0) + delta.x;
-        const newY = (website.y ?? 0) + delta.y;
-        updateWebsitePosition(activeIdStr, newX, newY);
+      if (!website) return;
 
-        // Handle category change + grid reorder (only when dropped on a target)
-        if (over) {
-          const overIdStr = String(over.id);
-          let targetCategoryId = website.categoryId;
+      // Category change & grid reorder
+      let targetCategoryId = website.categoryId;
+      if (over) {
+        const overIdStr = String(over.id);
 
-          if (overIdStr.startsWith('droppable-cat-')) {
-            targetCategoryId = overIdStr.replace('droppable-cat-', '');
-          } else {
-            const overWebsite = websites.find(w => w.id === overIdStr);
-            if (overWebsite) {
-              targetCategoryId = overWebsite.categoryId;
-            }
-          }
+        if (overIdStr.startsWith('droppable-cat-')) {
+          targetCategoryId = overIdStr.replace('droppable-cat-', '');
+        } else {
+          const overWebsite = websites.find(w => w.id === overIdStr);
+          if (overWebsite) targetCategoryId = overWebsite.categoryId;
+        }
 
-          if (targetCategoryId !== website.categoryId) {
-            moveWebsiteToCategory(activeIdStr, targetCategoryId);
-          } else if (!isFreeLayout) {
-            // Grid mode: reorder within same category
-            const catWebsites = websites
-              .filter(w => w.categoryId === targetCategoryId)
-              .sort((a, b) => a.order - b.order);
-            const activeIdx = catWebsites.findIndex(w => w.id === activeIdStr);
-            const overIdx = catWebsites.findIndex(w => w.id === overIdStr);
-            if (activeIdx !== -1 && overIdx !== -1 && activeIdx !== overIdx) {
-              reorderWebsites(targetCategoryId, activeIdx, overIdx);
-            }
+        if (!isFreeLayout) {
+          const catWebsites = websites
+            .filter(w => w.categoryId === targetCategoryId)
+            .sort((a, b) => a.order - b.order);
+          const activeIdx = catWebsites.findIndex(w => w.id === activeIdStr);
+          const overIdx = catWebsites.findIndex(w => w.id === overIdStr);
+          if (activeIdx !== -1 && overIdx !== -1 && activeIdx !== overIdx) {
+            reorderWebsites(targetCategoryId, activeIdx, overIdx);
           }
         }
+      }
+
+      if (isFreeLayout) {
+        const translatedRect = active.rect.current.translated;
+        const rectCategoryId = translatedRect ? getCategoryIdAtRect(translatedRect) : null;
+        if (rectCategoryId) targetCategoryId = rectCategoryId;
+
+        const targetCanvas = getCategoryCanvas(targetCategoryId);
+        let newCol = Math.max(0, (website.gridCol ?? 0) + Math.round(delta.x / GRID_SIZE_X));
+        let newRow = Math.max(0, (website.gridRow ?? 0) + Math.round(delta.y / GRID_SIZE_Y));
+
+        if (translatedRect && targetCanvas) {
+          const canvasRect = targetCanvas.getBoundingClientRect();
+          newCol = Math.max(0, Math.round((translatedRect.left - canvasRect.left) / GRID_SIZE_X));
+          newRow = Math.max(0, Math.round((translatedRect.top - canvasRect.top) / GRID_SIZE_Y));
+        }
+
+        if (targetCategoryId !== website.categoryId) {
+          moveWebsiteToCategory(activeIdStr, targetCategoryId, newCol, newRow);
+        } else {
+          updateWebsitePosition(activeIdStr, newCol, newRow);
+        }
+      } else if (targetCategoryId !== website.categoryId) {
+        moveWebsiteToCategory(activeIdStr, targetCategoryId);
       }
       return;
     }
@@ -170,58 +216,81 @@ function App() {
   };
 
   const bgClass = useMemo(() => {
+    if (settings.backgroundImage) return '';
     switch (settings.background) {
       case 'white':
-        return 'bg-white dark:bg-gray-950';
+        return 'bg-canvas';
       case 'gray':
-        return 'bg-gray-50 dark:bg-gray-900';
+        return 'bg-canvas';
       case 'gradient':
       default:
-        return 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900';
+        return 'bg-canvas';
     }
-  }, [settings.background]);
+  }, [settings.background, settings.backgroundImage]);
 
-  // Initialize positions for websites without x,y in free mode
-  useEffect(() => {
-    if (!isFreeLayout) return;
-    // Websites without positions will get computed positions on first render
-  }, [isFreeLayout]);
+  const bgStyle: React.CSSProperties = useMemo(() => {
+    if (settings.backgroundImage) {
+      return {
+        backgroundImage: `url(${settings.backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+      };
+    }
+    return {};
+  }, [settings.backgroundImage]);
 
   return (
-    <div className={`min-h-screen ${bgClass} transition-colors duration-500`}>
+    <div className={`min-h-screen theme-transition app-chrome ${bgClass}`} style={bgStyle}>
+      {settings.backgroundImage && (
+        <div className="fixed inset-0 bg-black/40 z-0 pointer-events-none" />
+      )}
+
       {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">MyHomepage</h1>
-            <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-40 glass border-b border-line-light/60 relative z-10">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-7 lg:px-10">
+          <div className="flex items-center justify-between h-[68px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-ink text-canvas flex items-center justify-center shadow-sm">
+                <Move className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-[15px] sm:text-base font-semibold text-ink leading-tight">MyHomepage</h1>
+                <p className="hidden sm:block text-[11px] text-ink-tertiary leading-tight mt-0.5">
+                  {websiteCount} sites · {categoryCount} spaces
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ClockWidget />
+              <div className="w-px h-5 bg-line-light mx-1.5" />
               <button
                 onClick={toggleLayout}
-                className="p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="toolbar-button"
                 title={isFreeLayout ? '切换到网格布局' : '切换到自由布局'}
               >
-                {isFreeLayout ? <LayoutGrid className="w-5 h-5" /> : <Move className="w-5 h-5" />}
+                {isFreeLayout ? <LayoutGrid className="w-[18px] h-[18px]" /> : <Move className="w-[18px] h-[18px]" />}
               </button>
               <button
                 onClick={toggleTheme}
-                className="p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="toolbar-button"
                 title={isDark ? '切换亮色模式' : '切换暗色模式'}
               >
-                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {isDark ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="toolbar-button"
                 title="添加网站"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-[18px] h-[18px]" />
               </button>
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="p-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="toolbar-button"
                 title="设置"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-[18px] h-[18px]" />
               </button>
             </div>
           </div>
@@ -229,19 +298,22 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-7 lg:px-10 py-8 sm:py-10 relative z-10">
         {settings.showSearch && (
-          <div className="mb-12">
-            <SearchBox />
+          <div className="mb-9 sm:mb-11">
+            <div className="max-w-3xl mx-auto">
+              <SearchBox />
+            </div>
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col xl:flex-row gap-8 lg:gap-10 items-start">
           {/* Left: Categories + Websites */}
-          <div className="flex-1" ref={mainRef}>
+          <div className="flex-1 min-w-0 w-full" ref={mainRef}>
             <DndContext
               sensors={sensors}
               collisionDetection={isFreeLayout ? pointerWithin : rectIntersection}
+              modifiers={isFreeLayout ? [snapModifier] : undefined}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
@@ -269,9 +341,9 @@ function App() {
             {!showNewCategory ? (
               <button
                 onClick={() => setShowNewCategory(true)}
-                className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl border border-dashed border-line text-ink-secondary hover:border-accent hover:text-ink hover:bg-surface/50 transition-all flex items-center justify-center gap-2 text-sm font-medium"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 新建分类
               </button>
             ) : (
@@ -282,12 +354,12 @@ function App() {
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                   placeholder="输入分类名称"
-                  className="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-gray-400"
+                  className="flex-1 px-5 py-3.5 rounded-xl bg-surface border border-line text-ink placeholder-ink-tertiary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
                   autoFocus
                 />
                 <button
                   onClick={handleAddCategory}
-                  className="px-6 py-3 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 font-medium hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
+                  className="px-6 py-3.5 rounded-xl bg-accent text-white font-medium hover:bg-accent-hover transition-all"
                 >
                   添加
                 </button>
@@ -296,7 +368,7 @@ function App() {
                     setShowNewCategory(false);
                     setNewCategoryName('');
                   }}
-                  className="px-4 py-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="px-5 py-3.5 rounded-xl text-ink-secondary hover:bg-surface-hover transition-all"
                 >
                   取消
                 </button>
@@ -306,7 +378,7 @@ function App() {
 
           {/* Right: Todo Widget */}
           {settings.showTodo && (
-            <div className="lg:w-80">
+            <div className="w-full xl:w-80 shrink-0">
               <div className="sticky top-24">
                 <TodoWidget />
               </div>

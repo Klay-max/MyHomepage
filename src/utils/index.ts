@@ -1,4 +1,36 @@
+import type { Modifier } from '@dnd-kit/core';
 import type { SearchEngine } from '../types';
+
+// ===== Grid snap constants =====
+export const GRID_SIZE_X = 130;
+export const GRID_SIZE_Y = 110;
+
+/** Snap a coordinate to the nearest grid point */
+export const snapToGrid = (value: number, gridSize: number): number =>
+  Math.round(value / gridSize) * gridSize;
+
+/** Convert pixel position to grid coordinates */
+export const pixelToGrid = (x: number, y: number) => ({
+  gridCol: Math.round(x / GRID_SIZE_X),
+  gridRow: Math.round(y / GRID_SIZE_Y),
+});
+
+/** Convert grid coordinates to pixel position */
+export const gridToPixel = (gridCol: number, gridRow: number) => ({
+  x: gridCol * GRID_SIZE_X,
+  y: gridRow * GRID_SIZE_Y,
+});
+
+/** dnd-kit modifier: snaps dragging website cards to grid in free mode */
+export const createSnapToGridModifier = (gridX: number, gridY: number): Modifier =>
+  ({ transform, active }) => {
+    if (!active || active.data.current?.type !== 'website') return transform;
+    return {
+      ...transform,
+      x: snapToGrid(transform.x, gridX),
+      y: snapToGrid(transform.y, gridY),
+    };
+  };
 
 // Get favicon sources for a website (multi-source fallback, China-friendly)
 export const getFaviconSources = (url: string): string[] => {
@@ -78,7 +110,6 @@ export const getDensityPaddingClass = (density: 'compact' | 'comfortable' | 'spa
 };
 
 // Search engine URLs
-
 export const getSearchEngineUrl = (engine: SearchEngine, query: string): string => {
   const engines = {
     baidu: `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`,
