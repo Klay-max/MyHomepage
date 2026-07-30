@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Trash2, Globe, GripVertical, Pencil } from 'lucide-react';
+import { Trash2, GripVertical, Pencil } from 'lucide-react';
 import type { Website } from '../types';
-import { getFaviconSources, formatUrl, gridToPixel } from '../utils';
+import { getFaviconSources, getAvatarGradient, formatUrl, gridToPixel } from '../utils';
 import { useStore } from '../store';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ContextMenu } from './ContextMenu';
@@ -45,6 +45,15 @@ export function WebsiteCard({ website, isFreeLayout }: WebsiteCardProps) {
     }
   };
 
+  const handleIconLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    // Some services return a blank/transparent 16x16 placeholder on failure.
+    // Treat tiny images as failures so the letter-avatar fallback is shown.
+    if (img.naturalWidth < 16 || img.naturalHeight < 16) {
+      handleIconError();
+    }
+  };
+
   const handleSaveEdit = () => {
     const trimmedName = editName.trim();
     if (trimmedName && editUrl.trim()) {
@@ -54,11 +63,14 @@ export function WebsiteCard({ website, isFreeLayout }: WebsiteCardProps) {
   };
 
   const iconSizeMap: Record<string, string> = {
-    small: 'w-10 h-10 rounded-xl',
-    medium: 'w-14 h-14 rounded-2xl',
-    large: 'w-16 h-16 rounded-2xl',
+    small: 'w-10 h-10 rounded-[10px]',
+    medium: 'w-14 h-14 rounded-[14px]',
+    large: 'w-16 h-16 rounded-[16px]',
   };
   const iconSizeClass = iconSizeMap[settings.iconSize] || iconSizeMap.medium;
+
+  // Gradient for letter-avatar fallback
+  const avatarGradient = getAvatarGradient(website.name);
 
   const mergedListeners = {
     ...listeners,
@@ -103,12 +115,10 @@ export function WebsiteCard({ website, isFreeLayout }: WebsiteCardProps) {
         position: 'absolute',
         left: `${pixelPos.x}px`,
         top: `${pixelPos.y}px`,
-        zIndex: isDragging ? 50 : 1,
         opacity: isDragging ? 0 : 1,
         transition: isDragging ? 'none' : 'opacity 0.2s ease',
       }
     : {
-        zIndex: isDragging ? 50 : 1,
         opacity: isDragging ? 0.3 : 1,
       };
 
@@ -163,7 +173,7 @@ export function WebsiteCard({ website, isFreeLayout }: WebsiteCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative"
+      className={`group relative z-[1] ${isFreeLayout ? 'hover:z-10' : ''}`}
       onContextMenu={handleRightClick}
     >
       <ConfirmDialog
@@ -188,27 +198,45 @@ export function WebsiteCard({ website, isFreeLayout }: WebsiteCardProps) {
         {...mergedListeners}
         {...attributes}
         onPointerUp={handlePointerUp}
-        className="flex flex-col items-center gap-2.5 py-4 px-3 rounded-2xl
+        className={`w-[116px] flex flex-col items-center gap-2.5 py-4 px-3 rounded-2xl
                    bg-surface border border-line-light
                    hover:border-line
                    hover:shadow-[0_4px_12px_rgba(0,0,0,0.06),0_2px_6px_rgba(0,0,0,0.04)]
                    dark:hover:shadow-[0_4px_16px_rgba(0,0,0,0.5),0_2px_6px_rgba(0,0,0,0.3)]
-                   hover:scale-[1.04]
+                   ${isFreeLayout ? 'hover:-translate-y-0.5' : 'hover:scale-[1.04]'}
                    transition-all duration-250 ease-out
-                   cursor-grab active:cursor-grabbing select-none"
+                   cursor-grab active:cursor-grabbing select-none`}
         style={{ touchAction: 'none' }}
       >
-        {/* Icon */}
-        <div className={`${iconSizeClass} bg-surface-hover flex items-center justify-center overflow-hidden shrink-0`}>
+        {/* Icon — gradient ring + white inner square + favicon, with depth shadow */}
+        <div
+          className={`${iconSizeClass} flex items-center justify-center overflow-hidden shrink-0 relative
+                      ring-1 ring-black/5 dark:ring-white/10
+                      shadow-[0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.18)]`}
+          style={{
+            background: `linear-gradient(135deg, ${avatarGradient.from}, ${avatarGradient.to})`,
+          }}
+        >
           {!iconError && currentFavicon ? (
-            <img
-              src={currentFavicon}
-              alt={website.name}
-              className="w-full h-full object-contain p-3"
-              onError={handleIconError}
-            />
+            <>
+              {/* White inner square — ensures every favicon renders at consistent visual size */}
+              <div className="absolute inset-[6px] bg-white dark:bg-white/95 rounded-[6px] shadow-[inset_0_0_0_0.5px_rgba(0,0,0,0.06)]" />
+              <img
+                src={currentFavicon}
+                alt={website.name}
+                className="w-full h-full object-contain p-[8px] relative z-10"
+                onError={handleIconError}
+                onLoad={handleIconLoad}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+              />
+            </>
           ) : (
-            <Globe className="w-1/2 h-1/2 text-ink-tertiary" />
+            <span
+              className={`font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)] ${settings.iconSize === 'small' ? 'text-base' : settings.iconSize === 'large' ? 'text-2xl' : 'text-xl'}`}
+            >
+              {website.name.charAt(0).toUpperCase()}
+            </span>
           )}
         </div>
 

@@ -2,8 +2,8 @@ import type { Modifier } from '@dnd-kit/core';
 import type { SearchEngine } from '../types';
 
 // ===== Grid snap constants =====
-export const GRID_SIZE_X = 130;
-export const GRID_SIZE_Y = 110;
+export const GRID_SIZE_X = 140;
+export const GRID_SIZE_Y = 120;
 
 /** Snap a coordinate to the nearest grid point */
 export const snapToGrid = (value: number, gridSize: number): number =>
@@ -35,15 +35,51 @@ export const createSnapToGridModifier = (gridX: number, gridY: number): Modifier
 // Get favicon sources for a website (multi-source fallback, China-friendly)
 export const getFaviconSources = (url: string): string[] => {
   try {
-    const domain = new URL(url).hostname;
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+    const protocol = urlObj.protocol;
     return [
-      `https://${domain}/favicon.ico`,
-      `https://api.iowen.cn/favicon/${domain}.png`,
+      // DuckDuckGo — usually the most reliable for arbitrary domains
       `https://icons.duckduckgo.com/ip3/${domain}.ico`,
+      // Google's high-res favicon service (may be blocked/return blank in some regions)
+      `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+      // Site's own favicon (original protocol preserved)
+      `${protocol}//${domain}/favicon.ico`,
+      // China-friendly fallback
+      `https://api.iowen.cn/favicon/${domain}.png`,
     ];
   } catch {
     return [];
   }
+};
+
+// Generate a deterministic gradient from a string (for letter-avatar fallback)
+const AVATAR_GRADIENTS: Array<{ from: string; to: string }> = [
+  { from: '#6366f1', to: '#3b82f6' },  // indigo → blue
+  { from: '#8b5cf6', to: '#6366f1' },  // violet → indigo
+  { from: '#ec4899', to: '#8b5cf6' },  // pink → violet
+  { from: '#f59e0b', to: '#ef4444' },  // amber → red
+  { from: '#10b981', to: '#06b6d4' },  // emerald → cyan
+  { from: '#06b6d4', to: '#3b82f6' },  // cyan → blue
+  { from: '#f97316', to: '#eab308' },  // orange → yellow
+  { from: '#a855f7', to: '#ec4899' },  // purple → pink
+  { from: '#14b8a6', to: '#10b981' },  // teal → emerald
+  { from: '#0ea5e9', to: '#6366f1' },  // sky → indigo
+  { from: '#d946ef', to: '#a855f7' },  // fuchsia → purple
+  { from: '#22c55e', to: '#14b8a6' },  // green → teal
+];
+
+export const getAvatarColor = (name: string): string => {
+  const gradient = getAvatarGradient(name);
+  return gradient.from;
+};
+
+export const getAvatarGradient = (name: string): { from: string; to: string } => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
 };
 
 export const getFaviconUrl = (url: string): string => {

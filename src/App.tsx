@@ -116,7 +116,9 @@ function App() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      // Require a slightly larger movement before drag starts; prevents
+      // accidental drags when the user just means to click.
+      activationConstraint: { distance: 10 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -136,7 +138,7 @@ function App() {
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over, delta } = event;
+    const { active, over } = event;
     setActiveId(null);
 
     const activeIdStr = String(active.id);
@@ -177,8 +179,8 @@ function App() {
         if (rectCategoryId) targetCategoryId = rectCategoryId;
 
         const targetCanvas = getCategoryCanvas(targetCategoryId);
-        let newCol = Math.max(0, (website.gridCol ?? 0) + Math.round(delta.x / GRID_SIZE_X));
-        let newRow = Math.max(0, (website.gridRow ?? 0) + Math.round(delta.y / GRID_SIZE_Y));
+        let newCol = website.gridCol ?? 0;
+        let newRow = website.gridRow ?? 0;
 
         if (translatedRect && targetCanvas) {
           const canvasRect = targetCanvas.getBoundingClientRect();

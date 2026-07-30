@@ -6,22 +6,103 @@ import { GRID_SIZE_X, GRID_SIZE_Y } from '../utils';
 // Generate unique ID
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-// Default categories
+// Default categories — from user's browser bookmarks (2026-07-29)
 const defaultCategories: Category[] = [
-  { id: 'work', name: '工作', order: 0 },
-  { id: 'learn', name: '学习', order: 1 },
-  { id: 'tools', name: '工具', order: 2 },
-  { id: 'entertainment', name: '娱乐', order: 3 },
+  { id: 'ugc', name: 'UGC', order: 0 },
+  { id: 'aigc-w', name: 'AIGC-W', order: 1 },
+  { id: 'aigc-t', name: 'AIGC-T', order: 2 },
+  { id: 'aigc-r', name: 'AIGC-R', order: 3 },
+  { id: 'aigc-v', name: 'AIGC-V', order: 4 },
+  { id: 'work', name: 'Work', order: 5 },
 ];
 
-// Default websites
-const defaultWebsites: Website[] = [
-  { id: '1', name: 'GitHub', url: 'https://github.com', categoryId: 'work', order: 0 },
-  { id: '2', name: 'Vercel', url: 'https://vercel.com', categoryId: 'work', order: 1 },
-  { id: '3', name: 'DeepSeek', url: 'https://chat.deepseek.com', categoryId: 'tools', order: 0 },
-  { id: '4', name: 'Bilibili', url: 'https://www.bilibili.com', categoryId: 'entertainment', order: 0 },
-  { id: '5', name: '知乎', url: 'https://www.zhihu.com', categoryId: 'learn', order: 0 },
-];
+// Columns per row in free-layout mode (130px each → 650px for 5 cols, fits beside todo widget)
+const COLS_PER_ROW = 5;
+
+// Helper: assign grid positions within each category
+function withGridPositions(raw: Array<Omit<Website, 'gridCol' | 'gridRow'>>): Website[] {
+  const byCat: Record<string, typeof raw> = {};
+  for (const w of raw) (byCat[w.categoryId] ??= []).push(w);
+  const result: Website[] = [];
+  for (const catId of Object.keys(byCat)) {
+    byCat[catId]
+      .sort((a, b) => a.order - b.order)
+      .forEach((w, i) => {
+        result.push({ ...w, gridCol: i % COLS_PER_ROW, gridRow: Math.floor(i / COLS_PER_ROW) });
+      });
+  }
+  return result;
+}
+
+// Default websites — from user's browser bookmarks (2026-07-29)
+const defaultWebsites: Website[] = withGridPositions([
+  // UGC
+  { id: 'w1', name: 'AI', url: 'http://www.anjianzhao.online/', categoryId: 'ugc', order: 0 },
+  { id: 'w2', name: '哔哩哔哩', url: 'https://www.bilibili.com/', categoryId: 'ugc', order: 1 },
+  { id: 'w3', name: 'YouTube', url: 'https://www.youtube.com/', categoryId: 'ugc', order: 2 },
+  // AIGC-W (AI Writing/Chat)
+  { id: 'w4', name: 'G-Gemini', url: 'https://gemini.google.com/', categoryId: 'aigc-w', order: 0 },
+  { id: 'w5', name: 'G-Notebook', url: 'https://notebooklm.google.com/', categoryId: 'aigc-w', order: 1 },
+  { id: 'w6', name: 'G-Google', url: 'https://myaccount.google.com/', categoryId: 'aigc-w', order: 2 },
+  { id: 'w7', name: 'G-Gmail', url: 'https://mail.google.com/', categoryId: 'aigc-w', order: 3 },
+  { id: 'w8', name: 'G-Drive', url: 'https://drive.google.com/drive/home', categoryId: 'aigc-w', order: 4 },
+  { id: 'w9', name: 'G-Cloud', url: 'https://console.cloud.google.com/', categoryId: 'aigc-w', order: 5 },
+  { id: 'w10', name: 'G-AI Studio', url: 'https://aistudio.google.com/prompts/new_chat', categoryId: 'aigc-w', order: 6 },
+  { id: 'w11', name: 'ChatGPT', url: 'https://chatgpt.com/', categoryId: 'aigc-w', order: 7 },
+  { id: 'w12', name: 'Claude', url: 'https://claude.ai/new', categoryId: 'aigc-w', order: 8 },
+  { id: 'w13', name: 'Perplexity', url: 'https://www.perplexity.ai/', categoryId: 'aigc-w', order: 9 },
+  { id: 'w14', name: '字节豆包', url: 'https://www.doubao.com/chat/', categoryId: 'aigc-w', order: 10 },
+  { id: 'w15', name: '阿里千问', url: 'https://tongyi.aliyun.com/qianwen/', categoryId: 'aigc-w', order: 11 },
+  { id: 'w16', name: '腾讯元宝', url: 'https://yuanbao.tencent.com/', categoryId: 'aigc-w', order: 12 },
+  { id: 'w17', name: 'DeepSeek', url: 'https://chat.deepseek.com/', categoryId: 'aigc-w', order: 13 },
+  // AIGC-T (AI Tools/Platforms)
+  { id: 'w18', name: 'Coze', url: 'https://code.coze.cn/', categoryId: 'aigc-t', order: 0 },
+  { id: 'w19', name: 'N8N', url: 'https://darwin152140.app.n8n.cloud/home/workflows', categoryId: 'aigc-t', order: 1 },
+  { id: 'w20', name: 'Dify', url: 'https://cloud.dify.ai/apps', categoryId: 'aigc-t', order: 2 },
+  { id: 'w21', name: 'AWS', url: 'https://us-east-1.console.aws.amazon.com/', categoryId: 'aigc-t', order: 3 },
+  { id: 'w22', name: '阿里云', url: 'https://bailian.console.aliyun.com/', categoryId: 'aigc-t', order: 4 },
+  { id: 'w23', name: '字节云', url: 'https://console.volcengine.com/ark/', categoryId: 'aigc-t', order: 5 },
+  { id: 'w24', name: '腾讯云', url: 'https://cloud.tencent.com/', categoryId: 'aigc-t', order: 6 },
+  { id: 'w25', name: 'AnythingLLM', url: 'https://anythingllm.com/', categoryId: 'aigc-t', order: 7 },
+  { id: 'w26', name: 'Chatbox', url: 'https://chatboxai.app/en', categoryId: 'aigc-t', order: 8 },
+  { id: 'w27', name: 'Kiro', url: 'https://kiro.dev/', categoryId: 'aigc-t', order: 9 },
+  { id: 'w28', name: 'Cursor', url: 'https://cursor.com/en', categoryId: 'aigc-t', order: 10 },
+  { id: 'w29', name: 'Trae', url: 'https://www.trae.cn/', categoryId: 'aigc-t', order: 11 },
+  // AIGC-R (AI Resources/Dev)
+  { id: 'w30', name: 'CYLINK', url: 'https://2cy.io/user', categoryId: 'aigc-r', order: 0 },
+  { id: 'w31', name: 'Hero-sms', url: 'https://hero-sms.com/cn', categoryId: 'aigc-r', order: 1 },
+  { id: 'w32', name: 'Vercel', url: 'https://vercel.com/', categoryId: 'aigc-r', order: 2 },
+  { id: 'w33', name: 'Expo', url: 'https://expo.dev/', categoryId: 'aigc-r', order: 3 },
+  { id: 'w34', name: 'GitHub', url: 'https://github.com/', categoryId: 'aigc-r', order: 4 },
+  { id: 'w35', name: 'Hugging Face', url: 'https://huggingface.co/', categoryId: 'aigc-r', order: 5 },
+  { id: 'w36', name: 'Docker', url: 'https://www.docker.com/', categoryId: 'aigc-r', order: 6 },
+  { id: 'w37', name: 'Ollama', url: 'https://ollama.com/', categoryId: 'aigc-r', order: 7 },
+  { id: 'w38', name: 'Typora', url: 'https://typoraio.cn/', categoryId: 'aigc-r', order: 8 },
+  { id: 'w39', name: 'Python', url: 'https://www.python.org/', categoryId: 'aigc-r', order: 9 },
+  { id: 'w40', name: 'Node.js', url: 'https://nodejs.org/zh-cn/', categoryId: 'aigc-r', order: 10 },
+  // AIGC-V (AI Video/Image)
+  { id: 'w41', name: 'Sora', url: 'https://sora.chatgpt.com/explore', categoryId: 'aigc-v', order: 0 },
+  { id: 'w42', name: 'Runway', url: 'https://app.runwayml.com/', categoryId: 'aigc-v', order: 1 },
+  { id: 'w43', name: 'PixVerse', url: 'https://app.pixverse.ai/home', categoryId: 'aigc-v', order: 2 },
+  { id: 'w44', name: 'HeyGen', url: 'https://app.heygen.com/home', categoryId: 'aigc-v', order: 3 },
+  { id: 'w45', name: 'D-ID', url: 'https://studio.d-id.com/', categoryId: 'aigc-v', order: 4 },
+  { id: 'w46', name: '即梦AI', url: 'https://jimeng.jianying.com/', categoryId: 'aigc-v', order: 5 },
+  { id: 'w47', name: '可灵 AI', url: 'https://app.klingai.com/cn/', categoryId: 'aigc-v', order: 6 },
+  { id: 'w48', name: 'Vidu AI', url: 'https://www.vidu.cn/create', categoryId: 'aigc-v', order: 7 },
+  { id: 'w49', name: '海螺视频', url: 'https://hailuoai.com/video', categoryId: 'aigc-v', order: 8 },
+  { id: 'w50', name: '通义万相', url: 'https://tongyi.aliyun.com/wanxiang/', categoryId: 'aigc-v', order: 9 },
+  { id: 'w51', name: 'ComfyUI', url: 'https://www.comfy.org/zh-cn/gallery', categoryId: 'aigc-v', order: 10 },
+  // Work
+  { id: 'w52', name: '发现报告', url: 'https://www.fxbaogao.com/', categoryId: 'work', order: 0 },
+  { id: 'w53', name: '学科网', url: 'https://www.zxxk.com/', categoryId: 'work', order: 1 },
+  { id: 'w54', name: '组卷网', url: 'https://zujuan.xkw.com/', categoryId: 'work', order: 2 },
+  { id: 'w55', name: 'LMSCB', url: 'https://lmyt.cn6.quickconnect.cn/', categoryId: 'work', order: 3 },
+  { id: 'w56', name: '菁优网', url: 'https://658920.jyeoo.com/manage', categoryId: 'work', order: 4 },
+  { id: 'w57', name: '北极星后台', url: 'https://ls.51polestar.com/', categoryId: 'work', order: 5 },
+  { id: 'w58', name: '北极星', url: 'https://pt2.51polestar.com/login', categoryId: 'work', order: 6 },
+  { id: 'w59', name: '智学通', url: 'https://super-zxt-student.chuangke100.com/login', categoryId: 'work', order: 7 },
+  { id: 'w60', name: '智学通后台', url: 'https://super-zxt-manage.chuangke100.com/login', categoryId: 'work', order: 8 },
+]);
 
 export const useStore = create<AppState>()(
   persist(
@@ -245,7 +326,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'myhomepage-storage',
-      version: 3,
+      version: 6,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         const settings = (state?.settings ?? {}) as Record<string, unknown>;
@@ -269,6 +350,34 @@ export const useStore = create<AppState>()(
             }
           }
           state.websites = websites;
+        }
+
+        // v3 → v4: replace default data with user's full bookmark set
+        if (version < 4) {
+          state.categories = defaultCategories;
+          state.websites = defaultWebsites;
+        }
+
+        // v4 → v5: re-seed data with pre-computed grid positions
+        if (version < 5) {
+          state.categories = defaultCategories;
+          state.websites = defaultWebsites;
+        }
+
+        // v5 → v6: recompute grid positions with 5 columns (better fit beside todo widget)
+        if (version < 6) {
+          const websites = (state?.websites ?? []) as Website[];
+          const byCat: Record<string, Website[]> = {};
+          for (const w of websites) (byCat[w.categoryId] ??= []).push(w);
+          const result: Website[] = [];
+          for (const catId of Object.keys(byCat)) {
+            byCat[catId]
+              .sort((a, b) => a.order - b.order)
+              .forEach((w, i) => {
+                result.push({ ...w, gridCol: i % COLS_PER_ROW, gridRow: Math.floor(i / COLS_PER_ROW) });
+              });
+          }
+          state.websites = result;
         }
 
         state.settings = settings;

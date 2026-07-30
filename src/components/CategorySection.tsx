@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Plus, Trash2, Edit2, GripVertical, ChevronDown } from 'lucide-react';
 import { useStore } from '../store';
 import { WebsiteCard } from './WebsiteCard';
+import { GRID_SIZE_X, GRID_SIZE_Y } from '../utils';
 import { AddWebsiteModal } from './AddWebsiteModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import type { Category } from '../types';
@@ -87,14 +88,18 @@ export function CategorySection({ category, isFreeLayout }: CategorySectionProps
   // Initialize grid positions for websites without coordinates
   useEffect(() => {
     if (!isFreeLayout) return;
-    categoryWebsites.forEach((website, index) => {
-      if (website.gridCol === undefined || website.gridRow === undefined) {
-        const col = index % 4;
-        const row = Math.floor(index / 4);
-        updateWebsitePosition(website.id, col, row);
-      }
+    const unpositioned = categoryWebsites.filter(
+      (w) => w.gridCol === undefined || w.gridRow === undefined
+    );
+    if (unpositioned.length === 0) return;
+    // Use 5 columns to match the default layout (fits beside todo widget)
+    unpositioned.forEach((website) => {
+      const idx = categoryWebsites.indexOf(website);
+      const col = idx % 5;
+      const row = Math.floor(idx / 5);
+      updateWebsitePosition(website.id, col, row);
     });
-  }, [isFreeLayout, categoryWebsites.length]);
+  }, [isFreeLayout, categoryWebsites.length, isCollapsed]);
 
   return (
     <SortableCategory category={category}>
@@ -185,7 +190,7 @@ export function CategorySection({ category, isFreeLayout }: CategorySectionProps
                 backgroundImage: isOver ? 'none' : `
                   radial-gradient(circle, var(--color-line-light) 1px, transparent 1px)
                 `.trim(),
-                backgroundSize: '130px 110px',
+                backgroundSize: `${GRID_SIZE_X}px ${GRID_SIZE_Y}px`,
                 backgroundPosition: '0 0',
               }}
             >
