@@ -97,7 +97,7 @@ export const formatUrl = (url: string): string => {
   }
 };
 
-// Validate URL
+// Validate a fully-formed URL (any URL constructor can parse)
 export const isValidUrl = (url: string): boolean => {
   try {
     new URL(url);
@@ -105,6 +105,27 @@ export const isValidUrl = (url: string): boolean => {
   } catch {
     return false;
   }
+};
+
+// Check if raw user input looks like a URL vs a search query.
+// Stricter than isValidUrl — rejects "百度"-style inputs that pass new URL()
+// because URL constructor accepts non-ASCII IDN hostnames.
+export const looksLikeUrl = (input: string): boolean => {
+  const q = input.trim();
+  if (!q || /\s/.test(q)) return false;
+
+  // Pure ASCII domain pattern: word(.word)+ with optional port/path
+  // e.g. github.com, react.dev, foo.bar.baz, github.com/user, localhost:3000
+  const domainPattern = /^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+(:\d+)?(\/[^\s]*)?$/;
+  if (domainPattern.test(q)) return true;
+
+  // IP address: 192.168.1.1 or with port
+  const ipPattern = /^(\d{1,3}\.){3}\d{1,3}(:\d+)?(\/[^\s]*)?$/;
+  if (ipPattern.test(q)) return true;
+
+  // Bare localhost with optional port
+  const localhostPattern = /^localhost(:\d+)?(\/[^\s]*)?$/;
+  return localhostPattern.test(q);
 };
 
 // Add https if missing
@@ -147,19 +168,23 @@ export const getDensityPaddingClass = (density: 'compact' | 'comfortable' | 'spa
 
 // Search engine URLs
 export const getSearchEngineUrl = (engine: SearchEngine, query: string): string => {
-  const engines = {
-    baidu: `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`,
-    google: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
+  const engines: Record<string, string> = {
+    metaso: `https://metaso.cn/?q=${encodeURIComponent(query)}`,
     bing: `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+    kimi: `https://kimi.moonshot.cn/`,
+    baidu: `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`,
+    perplexity: `https://www.perplexity.ai/search?q=${encodeURIComponent(query)}`,
   };
-  return engines[engine];
+  return engines[engine] ?? engines['metaso'];
 };
 
 export const getSearchEngineName = (engine: SearchEngine): string => {
-  const names = {
-    baidu: '百度',
-    google: 'Google',
+  const names: Record<string, string> = {
+    metaso: '秘塔AI',
     bing: 'Bing',
+    kimi: 'Kimi',
+    baidu: '百度',
+    perplexity: 'Perplexity',
   };
-  return names[engine];
+  return names[engine] ?? '秘塔AI';
 };

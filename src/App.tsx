@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Plus, Settings, Sun, Moon, LayoutGrid, Move } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Settings, Sun, Moon, LayoutGrid, Move, Command } from 'lucide-react';
 import {
   DndContext,
   KeyboardSensor,
@@ -21,6 +22,7 @@ import { ClockWidget } from './components/ClockWidget';
 import { AddWebsiteModal } from './components/AddWebsiteModal';
 import { SettingsPanel } from './components/SettingsPanel';
 import { WebsiteDragPreview } from './components/WebsiteDragPreview';
+import { CommandPalette } from './components/CommandPalette';
 import { createSnapToGridModifier, GRID_SIZE_X, GRID_SIZE_Y } from './utils';
 
 const getCategoryCanvas = (categoryId: string) =>
@@ -50,6 +52,7 @@ function App() {
   const { categories, settings, websites, reorderCategories, addCategory, updateSettings, updateWebsitePosition, moveWebsiteToCategory, reorderWebsites } = useStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -86,6 +89,22 @@ function App() {
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
+      // Ctrl+K / Cmd+K — toggle command palette
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandOpen(prev => !prev);
+        return;
+      }
+
+      // If command palette is open, let it handle its own keys
+      if (isCommandOpen) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setIsCommandOpen(false);
+        }
+        return;
+      }
+
       if (e.key === '/' && !isInput) {
         e.preventDefault();
         const searchInput = document.querySelector<HTMLInputElement>('input[type="text"]');
@@ -108,7 +127,7 @@ function App() {
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isAddModalOpen, isSettingsOpen, showNewCategory]);
+  }, [isAddModalOpen, isSettingsOpen, showNewCategory, isCommandOpen]);
 
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
   const websiteCount = websites.length;
@@ -249,7 +268,12 @@ function App() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-40 glass border-b border-line-light/60 relative z-10">
+      <motion.header
+        className="sticky top-0 z-40 glass border-b border-line-light/60 relative z-10"
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-7 lg:px-10">
           <div className="flex items-center justify-between h-[68px]">
             <div className="flex items-center gap-3 min-w-0">
@@ -266,6 +290,13 @@ function App() {
             <div className="flex items-center gap-1.5">
               <ClockWidget />
               <div className="w-px h-5 bg-line-light mx-1.5" />
+              <button
+                onClick={() => setIsCommandOpen(true)}
+                className="toolbar-button"
+                title="命令面板 (Ctrl+K)"
+              >
+                <Command className="w-[18px] h-[18px]" />
+              </button>
               <button
                 onClick={toggleLayout}
                 className="toolbar-button"
@@ -297,10 +328,15 @@ function App() {
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Main Content */}
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-7 lg:px-10 py-8 sm:py-10 relative z-10">
+      <motion.main
+        className="max-w-[1440px] mx-auto px-4 sm:px-7 lg:px-10 py-8 sm:py-10 relative z-10"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+      >
         {settings.showSearch && (
           <div className="mb-9 sm:mb-11">
             <div className="max-w-3xl mx-auto">
@@ -323,12 +359,18 @@ function App() {
                 items={sortedCategories.map(c => c.id)}
                 strategy={verticalListSortingStrategy}
               >
-                {sortedCategories.map((category) => (
-                  <CategorySection
+                {sortedCategories.map((category, index) => (
+                  <motion.div
                     key={category.id}
-                    category={category}
-                    isFreeLayout={isFreeLayout}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.15 + index * 0.06, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                    <CategorySection
+                      category={category}
+                      isFreeLayout={isFreeLayout}
+                    />
+                  </motion.div>
                 ))}
               </SortableContext>
 
@@ -387,7 +429,7 @@ function App() {
             </div>
           )}
         </div>
-      </main>
+      </motion.main>
 
       {/* Modals */}
       <AddWebsiteModal
@@ -397,6 +439,12 @@ function App() {
       <SettingsPanel
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isCommandOpen}
+        onClose={() => setIsCommandOpen(false)}
       />
     </div>
   );

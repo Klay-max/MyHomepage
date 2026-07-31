@@ -41,9 +41,11 @@ export function SettingsPanel({ isOpen, onClose }: SettingsPanelProps) {
   ];
 
   const searchEngines: { value: SearchEngine; label: string }[] = [
-    { value: 'baidu', label: '百度' },
-    { value: 'google', label: 'Google' },
+    { value: 'metaso', label: '秘塔AI' },
     { value: 'bing', label: 'Bing' },
+    { value: 'kimi', label: 'Kimi' },
+    { value: 'baidu', label: '百度' },
+    { value: 'perplexity', label: 'Perplexity' },
   ];
 
   // Shared button class builder

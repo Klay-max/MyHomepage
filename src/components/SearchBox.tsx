@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Search, Globe, ArrowRight, ExternalLink } from 'lucide-react';
 import { useStore } from '../store';
-import { normalizeUrl, isValidUrl, getSearchEngineUrl, getSearchEngineName } from '../utils';
+import { normalizeUrl, looksLikeUrl, getSearchEngineUrl, getSearchEngineName } from '../utils';
 
 export function SearchBox() {
   const { searchQuery, setSearchQuery, searchResults, settings } = useStore();
@@ -14,7 +14,7 @@ export function SearchBox() {
 
     const query = searchQuery.trim();
 
-    if (isValidUrl(normalizeUrl(query))) {
+    if (looksLikeUrl(query)) {
       window.open(normalizeUrl(query), '_blank');
       setSearchQuery('');
       return;
@@ -49,6 +49,10 @@ export function SearchBox() {
             onFocus={() => setIsFocused(true)}
             onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             placeholder="搜索收藏的网站，或输入网址..."
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             className="w-full pl-13 sm:pl-15 pr-14 sm:pr-16 py-4 sm:py-[18px] rounded-[28px] bg-surface/88 border border-line-light text-[15px] text-ink placeholder-ink-tertiary focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent/50 transition-all shadow-[0_18px_50px_rgba(29,29,31,0.08),inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl"
           />
           <button
@@ -96,7 +100,7 @@ export function SearchBox() {
             </div>
           ) : (
             <div className="px-5 py-4 text-sm text-ink-secondary">
-              {isValidUrl(normalizeUrl(searchQuery)) ? (
+              {looksLikeUrl(searchQuery) ? (
                 <button
                   onClick={() => handleResultClick(normalizeUrl(searchQuery))}
                   className="w-full flex items-center gap-3 text-left"

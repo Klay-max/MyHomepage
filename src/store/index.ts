@@ -116,7 +116,7 @@ export const useStore = create<AppState>()(
         density: 'comfortable',
         background: 'gradient',
         theme: 'system',
-        searchEngine: 'baidu',
+        searchEngine: 'metaso',
         layoutMode: 'free',
         showSearch: true,
         showTodo: true,
@@ -326,7 +326,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'myhomepage-storage',
-      version: 6,
+      version: 7,
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Record<string, unknown>;
         const settings = (state?.settings ?? {}) as Record<string, unknown>;
@@ -378,6 +378,15 @@ export const useStore = create<AppState>()(
               });
           }
           state.websites = result;
+        }
+
+        // v6 → v7: migrate search engine from google → bing, set default to metaso
+        if (version < 7) {
+          if (settings.searchEngine === 'google') {
+            settings.searchEngine = 'bing';
+          } else if (settings.searchEngine === 'baidu') {
+            settings.searchEngine = 'metaso';
+          }
         }
 
         state.settings = settings;

@@ -29,7 +29,7 @@ export interface Todo {
 export type IconSize = 'small' | 'medium' | 'large';
 export type Density = 'compact' | 'comfortable' | 'spacious';
 export type Theme = 'light' | 'dark' | 'system';
-export type SearchEngine = 'baidu' | 'google' | 'bing';
+export type SearchEngine = 'metaso' | 'bing' | 'kimi' | 'baidu' | 'perplexity';
 
 export type LayoutMode = 'grid' | 'free';
 
